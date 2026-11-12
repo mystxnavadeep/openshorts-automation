@@ -1,0 +1,22 @@
+[Unit]
+Description=OpenShorts Tailscale Dashboard & Backend
+After=network.target tailscaled.service
+Wants=tailscaled.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/openshorts-automation
+ExecStart=/opt/openshorts-automation/backend/run.sh
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/openshorts-automation/.env
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+ProtectSystem=full
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

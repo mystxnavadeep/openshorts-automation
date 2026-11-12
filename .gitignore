@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.venv
+venv/
+ENV/
+
+# Video & Pipeline processing artifacts
+output/
+downloads/
+temp/
+*.mp4
+*.m4a
+*.wav
+*.ass
+*.srt
+*.vtt
+
+# Models cache
+models/
+yolov8*.pt
+
+# Secrets & Credentials
+rclone.conf
+*.pem
+*.key
+*.crt
+id_rsa*
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / JS
+node_modules/
+npm-debug.log*

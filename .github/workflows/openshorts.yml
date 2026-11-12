@@ -1,0 +1,194 @@
+name: OpenShorts Automation Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      youtube_url:
+        description: 'YouTube Video URL to process'
+        required: true
+        type: string
+      output_format:
+        description: 'Output Aspect Ratio'
+        required: false
+        default: 'vertical'
+        type: choice
+        options:
+          - vertical
+          - square
+          - horizontal
+      target_clips:
+        description: 'Number of viral Shorts to generate (1-10)'
+        required: false
+        default: '3'
+        type: string
+      clip_min_seconds:
+        description: 'Minimum clip duration in seconds'
+        required: false
+        default: '15'
+        type: string
+      clip_max_seconds:
+        description: 'Maximum clip duration in seconds'
+        required: false
+        default: '60'
+        type: string
+      auto_hook:
+        description: 'Generate AI viral hook overlay text'
+        required: false
+        default: true
+        type: boolean
+      hook_style:
+        description: 'Viral Hook visual style'
+        required: false
+        default: 'viral_punch'
+        type: choice
+        options:
+          - viral_punch
+          - minimalist
+          - bold
+      gdrive_folder:
+        description: 'Google Drive destination folder name'
+        required: false
+        default: 'OpenShorts'
+        type: string
+      fast_mode:
+        description: 'Enable CPU-optimized fast processing'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  process-video:
+    name: Generate Shorts & Sync Drive
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Install System Dependencies & rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg \
+            libass-dev \
+            fonts-liberation \
+            fonts-noto-core \
+            rclone
+
+      - name: 🔑 Configure rclone Google Drive
+        env:
+          RCLONE_CONFIG_DATA: ${{ secrets.RCLONE_CONFIG_DATA }}
+        run: |
+          if [ -n "$RCLONE_CONFIG_DATA" ]; then
+            echo "Setting up rclone configuration from secrets..."
+            mkdir -p ~/.config/rclone
+            echo "$RCLONE_CONFIG_DATA" | base64 -d > ~/.config/rclone/rclone.conf
+            chmod 600 ~/.config/rclone/rclone.conf
+            echo "Testing rclone remote connection..."
+            rclone listremotes
+            # Quick check if gdrive is present
+            if rclone listremotes | grep -q "gdrive:"; then
+              echo "✓ Remote 'gdrive:' detected and ready!"
+            else
+              echo "⚠️ Warning: 'gdrive:' remote not found in rclone.conf. Listing remotes:"
+              rclone listremotes
+            fi
+          else
+            echo "⚠️ RCLONE_CONFIG_DATA secret is not set. Google Drive upload step will be skipped."
+          fi
+
+      - name: ⚡ Install Python Pipeline Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install CPU PyTorch build to avoid downloading gigabytes of CUDA packages
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          # Install remaining pipeline requirements
+          pip install -r pipeline/requirements.txt
+
+      - name: 🎬 Run OpenShorts Processing Pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YT_COOKIES: ${{ secrets.YT_COOKIES }}
+          GPU_RENDER: "0"
+          FORCE_CPU: "1"
+        run: |
+          echo "=========================================================="
+          echo "Starting OpenShorts video processing..."
+          echo "URL: ${{ inputs.youtube_url }}"
+          echo "Format: ${{ inputs.output_format }}"
+          echo "Target clips: ${{ inputs.target_clips }}"
+          echo "=========================================================="
+          
+          python3 pipeline/run_openshorts.py \
+            --url "${{ inputs.youtube_url }}" \
+            --output-dir "output" \
+            --format "${{ inputs.output_format }}" \
+            --target-clips "${{ inputs.target_clips }}" \
+            --min-seconds "${{ inputs.clip_min_seconds }}" \
+            --max-seconds "${{ inputs.clip_max_seconds }}" \
+            --auto-hook "${{ inputs.auto_hook }}" \
+            --fast-mode "${{ inputs.fast_mode }}"
+
+      - name: 📦 Upload Generated Shorts as Workflow Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openshorts-run-${{ github.run_number }}
+          path: output/
+          retention-days: 14
+
+      - name: ☁️ Upload Shorts to Google Drive via rclone
+        if: success()
+        run: |
+          if [ -f ~/.config/rclone/rclone.conf ] && rclone listremotes | grep -q "gdrive:"; then
+            TARGET_PATH="gdrive:${{ inputs.gdrive_folder }}/Run-${{ github.run_number }}"
+            echo "📤 Uploading generated clips to Google Drive ($TARGET_PATH)..."
+            rclone copy output/ "$TARGET_PATH" \
+              --progress \
+              --transfers 4 \
+              --checkers 8 \
+              --drive-chunk-size 32M
+            echo "✅ Successfully synced output to Google Drive: $TARGET_PATH"
+          else
+            echo "ℹ️ Skipping Google Drive upload: rclone config not present or 'gdrive:' remote not found."
+          fi
+
+      - name: 📊 Generate Workflow Summary
+        if: always()
+        run: |
+          echo "### ⚡ OpenShorts Automation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Source Video**: ${{ inputs.youtube_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: ${{ inputs.output_format }} (9:16 vertical)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target Clips Requested**: ${{ inputs.target_clips }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Google Drive Destination**: \`gdrive:${{ inputs.gdrive_folder }}/Run-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f output/metadata.json ]; then
+            echo "#### 🎬 Generated Clips:" >> $GITHUB_STEP_SUMMARY
+            echo "| Clip | Title | Duration | File Size |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+            python3 -c '
+          import json
+          try:
+              with open("output/metadata.json") as f:
+                  data = json.load(f)
+              for c in data.get("clips", []):
+                  print(f"| {c[\"filename\"]} | {c[\"title\"]} | {c[\"duration\"]}s | {c[\"size_mb\"]} MB |")
+          except Exception as e:
+              print(f"Error reading metadata: {e}")
+          ' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No metadata file generated (workflow may have failed before export)." >> $GITHUB_STEP_SUMMARY
+          fi

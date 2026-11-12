@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OpenShorts Automation | Tailscale Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1 class="logo-title">OpenShorts</h1>
+                    <p class="logo-subtitle">Tailscale Automation & GitHub Actions Pipeline</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div id="tailscaleBadge" class="status-badge checking">
+                    <span class="badge-dot"></span>
+                    <span id="tailscaleText">Tailscale: Checking...</span>
+                </div>
+                <div id="githubBadge" class="status-badge checking">
+                    <span class="badge-dot"></span>
+                    <span id="githubText">GitHub API</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <main class="main-content">
+            <!-- Left Column: Video Input & Processing Config -->
+            <section class="card control-card">
+                <div class="card-header">
+                    <h2>🎬 New Video Job</h2>
+                    <span class="card-tag">YouTube to Viral Shorts</span>
+                </div>
+
+                <form id="processForm" class="process-form">
+                    <!-- URL Input -->
+                    <div class="form-group">
+                        <label for="videoUrl">YouTube Video URL</label>
+                        <div class="input-with-action">
+                            <input type="url" id="videoUrl" name="videoUrl" 
+                                   placeholder="https://www.youtube.com/watch?v=... or youtu.be/..." 
+                                   required autocomplete="off">
+                            <button type="button" id="pasteBtn" class="btn-secondary btn-icon" title="Paste from clipboard">📋 Paste</button>
+                        </div>
+                        <div id="urlFeedback" class="input-hint">Enter any standard YouTube video URL</div>
+                    </div>
+
+                    <!-- Aspect Ratio & Clips Grid -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="outputFormat">Aspect Ratio</label>
+                            <select id="outputFormat" name="outputFormat">
+                                <option value="vertical" selected>📱 9:16 Vertical (Shorts/Reels)</option>
+                                <option value="square">🔲 1:1 Square (Feed)</option>
+                                <option value="horizontal">🖥️ 16:9 Landscape</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="targetClips">Target Clips</label>
+                            <select id="targetClips" name="targetClips">
+                                <option value="1">1 Short (Top Viral Moment)</option>
+                                <option value="3" selected>3 Shorts (Recommended)</option>
+                                <option value="5">5 Shorts (In-depth)</option>
+                                <option value="8">8 Shorts (Maximum)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Duration Range -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="minSeconds">Min Duration (sec)</label>
+                            <input type="number" id="minSeconds" name="minSeconds" min="10" max="60" value="15">
+                        </div>
+                        <div class="form-group">
+                            <label for="maxSeconds">Max Duration (sec)</label>
+                            <input type="number" id="maxSeconds" name="maxSeconds" min="15" max="180" value="60">
+                        </div>
+                    </div>
+
+                    <!-- Viral Hook & Subtitles Settings -->
+                    <div class="settings-box">
+                        <div class="toggle-group">
+                            <label class="toggle-label" for="autoHook">
+                                <span>✨ AI Viral Hook Overlay</span>
+                                <small>Generates catchy text hook for the first 3-5 seconds</small>
+                            </label>
+                            <input type="checkbox" id="autoHook" name="autoHook" checked class="switch">
+                        </div>
+
+                        <div class="toggle-group mt-2">
+                            <label class="toggle-label" for="fastMode">
+                                <span>⚡ CI/CD Fast Processing</span>
+                                <small>Optimizes Whisper & FFmpeg for GitHub Actions runners</small>
+                            </label>
+                            <input type="checkbox" id="fastMode" name="fastMode" checked class="switch">
+                        </div>
+                    </div>
+
+                    <!-- Google Drive Destination -->
+                    <div class="form-group">
+                        <label for="gdriveFolder">Google Drive Destination Folder</label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">gdrive:</span>
+                            <input type="text" id="gdriveFolder" name="gdriveFolder" value="OpenShorts" placeholder="OpenShorts">
+                        </div>
+                        <div class="input-hint">Clips will be uploaded via your configured rclone remote</div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="btn-primary btn-submit">
+                        <span class="btn-icon">🚀</span>
+                        <span id="submitBtnText">Dispatch GitHub Actions Workflow</span>
+                    </button>
+                </form>
+
+                <div id="submissionAlert" class="alert hidden"></div>
+            </section>
+
+            <!-- Right Column: Live Status & Workflow Monitor -->
+            <section class="card monitor-card">
+                <div class="card-header">
+                    <h2>📡 Execution Monitor</h2>
+                    <button id="refreshRunsBtn" class="btn-ghost" title="Refresh runs">🔄 Refresh</button>
+                </div>
+
+                <!-- Active Run Tracker -->
+                <div id="activeRunContainer" class="active-run-card hidden">
+                    <div class="active-run-header">
+                        <div>
+                            <span class="run-label">Active Workflow Run</span>
+                            <h3 id="activeRunTitle" class="run-title">Processing Video...</h3>
+                        </div>
+                        <span id="activeRunBadge" class="run-badge in_progress">In Progress</span>
+                    </div>
+
+                    <!-- Step Pipeline -->
+                    <div class="pipeline-tracker">
+                        <div class="pipeline-step" id="step-queued">
+                            <div class="step-indicator">⏳</div>
+                            <div class="step-label">Queued</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="pipeline-step" id="step-download">
+                            <div class="step-indicator">⬇️</div>
+                            <div class="step-label">Download</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="pipeline-step" id="step-transcribe">
+                            <div class="step-indicator">🧠</div>
+                            <div class="step-label">AI Analysis</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="pipeline-step" id="step-render">
+                            <div class="step-indicator">✂️</div>
+                            <div class="step-label">Shorts Render</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="pipeline-step" id="step-upload">
+                            <div class="step-indicator">☁️</div>
+                            <div class="step-label">GDrive Upload</div>
+                        </div>
+                    </div>
+
+                    <!-- Run Actions & Links -->
+                    <div id="runActionLinks" class="run-actions">
+                        <a id="runGithubLink" href="#" target="_blank" rel="noopener noreferrer" class="action-btn github-btn">
+                            View GitHub Actions Log ↗
+                        </a>
+                        <a id="runGdriveLink" href="#" target="_blank" rel="noopener noreferrer" class="action-btn gdrive-btn hidden">
+                            Open Google Drive Folder ↗
+                        </a>
+                        <a id="runArtifactLink" href="#" target="_blank" rel="noopener noreferrer" class="action-btn artifact-btn hidden">
+                            Download Artifact (.zip) ⬇
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent Runs History -->
+                <div class="runs-history">
+                    <h3 class="section-title">Recent Workflow Runs</h3>
+                    <div id="runsList" class="runs-list">
+                        <div class="loading-spinner">Loading workflow history...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span>🔒 Secure Tailscale Mesh</span> • 
+                <span>Repository: <a id="repoLink" href="#" target="_blank">openshorts-automation</a></span> • 
+                <span>Permanent Storage: Google Drive (rclone)</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

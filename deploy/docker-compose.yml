@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  openshorts-dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: openshorts-dashboard
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    network_mode: "host" # Allows direct access to Tailscale interface on Linux host
+    # Alternatively, if not using host networking:
+    # ports:
+    #   - "100.x.y.z:8000:8000" # Bind strictly to Tailscale IP
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -7,8 +7,13 @@ import subprocess
 from typing import List
 try:
     from pydantic_settings import BaseSettings
-except ImportError:
-    from pydantic import BaseSettings
+except Exception:
+    try:
+        from pydantic import BaseSettings
+    except Exception:
+        class BaseSettings:
+            def __init__(self, **kwargs):
+                pass
 
 
 def _resolve_github_token() -> str:

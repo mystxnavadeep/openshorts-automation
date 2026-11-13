@@ -21,7 +21,16 @@ The old fallback list (``tv_embed``, ``android``) is gone from yt-dlp: the
 first is "unsupported", the second is skipped whenever cookies are present.
 """
 
-HD_CLIENTS = ["default", "mweb"]
+import os
+
+_client_env = os.environ.get("YT_PLAYER_CLIENTS", "").strip()
+if _client_env:
+    HD_CLIENTS = [c.strip() for c in _client_env.split(",") if c.strip()]
+else:
+    # 'android' client bypasses the datacenter IP "Sign in to confirm you're not a bot"
+    # challenge on headless cloud runners (GitHub Actions / Azure / AWS) while still
+    # providing full 1080p formats. Falls back to default & mweb.
+    HD_CLIENTS = ["android", "default", "mweb"]
 
 
 class NotASingleVideo(ValueError):

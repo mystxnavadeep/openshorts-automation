@@ -116,7 +116,8 @@ jobs:
       - name: 🎬 Run Official OpenShorts Pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          YT_COOKIES: ${{ secrets.YT_COOKIES }}
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES || secrets.YT_COOKIES }}
+          YT_COOKIES: ${{ secrets.YOUTUBE_COOKIES || secrets.YT_COOKIES }}
           GPU_RENDER: "0"
           FORCE_CPU: "1"
           TRANSCRIBE_BACKEND: "whisper"

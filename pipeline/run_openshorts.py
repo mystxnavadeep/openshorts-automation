@@ -80,6 +80,13 @@ def main():
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
 
+    # Forward YouTube cookies under both variable names if present in environment
+    yt_cookies = os.getenv("YOUTUBE_COOKIES") or os.getenv("YT_COOKIES")
+    if yt_cookies:
+        env["YOUTUBE_COOKIES"] = yt_cookies
+        env["YT_COOKIES"] = yt_cookies
+        print(f"✓ YouTube cookies detected in environment ({len(yt_cookies)} chars)")
+
     # Add engine directory to PYTHONPATH so its internal imports resolve cleanly
     current_pythonpath = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = f"{ENGINE_DIR}:{current_pythonpath}" if current_pythonpath else str(ENGINE_DIR)

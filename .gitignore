@@ -55,6 +55,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# Server logs and runtime pid
+logs/
+*.pid
+.server.pid
+
 # Node / JS
 node_modules/
 npm-debug.log*

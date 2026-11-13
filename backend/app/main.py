@@ -161,7 +161,7 @@ dashboard_dir = Path(__file__).resolve().parent.parent.parent / "dashboard"
 if dashboard_dir.exists():
     app.mount("/static", StaticFiles(directory=str(dashboard_dir)), name="static")
 
-    @app.get("/")
+    @app.api_route("/", methods=["GET", "HEAD"])
     async def serve_dashboard():
         index_file = dashboard_dir / "index.html"
         if index_file.exists():

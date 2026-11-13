@@ -3,17 +3,45 @@ Application configuration loaded from environment variables and .env file.
 """
 
 import os
+import subprocess
 from typing import List
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings
+
+
+def _resolve_github_token() -> str:
+    token = os.getenv("GITHUB_TOKEN", "").strip()
+    # Check if token is valid and not a template placeholder
+    if token and not token.startswith("ghp_yourPersonalAccessToken") and not token.startswith("your_"):
+        return token
+    try:
+        res = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=2)
+        if res.returncode == 0 and res.stdout.strip().startswith("gh"):
+            return res.stdout.strip()
+    except Exception:
+        pass
+    return token
 
 
 class Settings(BaseSettings):
     # GitHub configuration
-    GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
+    GITHUB_TOKEN: str = _resolve_github_token()
     GITHUB_OWNER: str = os.getenv("GITHUB_OWNER", "mystxnavadeep")
     GITHUB_REPO: str = os.getenv("GITHUB_REPO", "openshorts-automation")
     GITHUB_WORKFLOW_ID: str = os.getenv("GITHUB_WORKFLOW_ID", "openshorts.yml")
     GITHUB_BRANCH: str = os.getenv("GITHUB_BRANCH", "main")
+
+    def __init__(self, **values):
+        super().__init__(**values)
+        if not self.GITHUB_TOKEN or self.GITHUB_TOKEN.startswith("ghp_yourPersonalAccessToken") or self.GITHUB_TOKEN.startswith("your_"):
+            try:
+                res = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=2)
+                if res.returncode == 0 and res.stdout.strip().startswith("gh"):
+                    self.GITHUB_TOKEN = res.stdout.strip()
+            except Exception:
+                pass
 
     # Host & Port binding
     HOST: str = os.getenv("HOST", "0.0.0.0")

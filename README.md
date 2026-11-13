@@ -83,29 +83,51 @@ Run the diagnostic script to verify system components:
 python3 scripts/check_health.py
 ```
 
-### 2. Start Dashboard Host (Bound to Tailscale)
-On your always-on machine, VPS, or Termux:
+### 2. Deploy Dashboard on Host (Samsung Galaxy Tab A9 / Termux / Linux)
+On your Samsung Tab A9 (or Linux host):
 ```bash
-cp .env.example .env
-# Edit .env and supply your GITHUB_TOKEN (PAT with 'workflow' scope)
-pip install -r backend/requirements.txt
-./backend/run.sh
+# Automated setup (installs compatible dependencies & validates environment):
+./scripts/setup_host.sh
+
+# Start the dashboard daemon (runs in background with CPU wake lock):
+./scripts/start.sh
+
+# Check dashboard health and access URLs:
+./scripts/status.sh
 ```
 
-### 3. Connect from Android
-1. Open **Tailscale** on your Android phone and toggle connection to **Active**.
-2. Open Chrome/Firefox on your phone and navigate to:
+### 3. Connect from Android Phone via Tailscale
+1. Open the **Tailscale app** on your Samsung Tab A9:
+   - Ensure **"Allow incoming connections"** is enabled in Tailscale settings.
+   - Toggle to **Connected**.
+   - Note the tablet's Tailscale IP (e.g. `100.85.12.34`).
+2. Open the **Tailscale app** on your Android Phone:
+   - Connect to the same Tailscale account.
+3. Open Chrome or Firefox on your phone and navigate to:
    ```text
    http://100.x.y.z:8000
    ```
-   *(Where `100.x.y.z` is your host's Tailscale IP address)*
+   *(Where `100.x.y.z` is your tablet's Tailscale IP address)*
 
 ### 4. Submit Video & Generate Shorts
-1. Paste a YouTube URL into the dashboard.
+1. Paste any YouTube video URL into the dashboard.
 2. Select desired format (Vertical 9:16, Square, or Horizontal).
 3. Tap **🚀 Dispatch GitHub Actions Workflow**.
 4. The execution monitor tracks progress in real-time.
 5. When complete, tap **Open Google Drive Folder ↗** to retrieve your shorts!
+
+---
+
+## 🛠️ Host Management Commands (Samsung Tab A9)
+
+| Task | Command | Description |
+| :--- | :--- | :--- |
+| **Setup Host** | `./scripts/setup_host.sh` | Installs pure-Python Termux-compatible wheels |
+| **Start Server** | `./scripts/start.sh` | Starts background daemon with CPU wake-lock |
+| **Foreground Debug** | `./scripts/start.sh --foreground` | Runs interactively in terminal |
+| **Status Check** | `./scripts/status.sh` | Checks process PID, Tailscale IP, and `/health` |
+| **Restart Server** | `./scripts/restart.sh` | Gracefully stops and starts backend |
+| **Stop Server** | `./scripts/stop.sh` | Stops daemon and releases CPU wake-lock |
 
 ---
 

@@ -1,4 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
 set -e
 
 # Change directory to backend parent
@@ -17,10 +20,25 @@ if [ ! -f "$ROOT_DIR/.env" ]; then
     echo "ℹ️  Please edit .env to configure GITHUB_TOKEN if needed."
 fi
 
+# Acquire Termux wake lock if on Android
+if command -v termux-wake-lock >/dev/null 2>&1; then
+    termux-wake-lock
+fi
+
 # Detect Tailscale IP if available
 TAILSCALE_IP=""
-if command -v tailscale >/dev/null 2>&1; then
+if [ -n "$TAILSCALE_IP_OVERRIDE" ]; then
+    TAILSCALE_IP="$TAILSCALE_IP_OVERRIDE"
+elif command -v tailscale >/dev/null 2>&1; then
     TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || true)
+fi
+
+if [ -z "$TAILSCALE_IP" ]; then
+    TAILSCALE_IP=$(ip -4 addr 2>/dev/null | grep -oE "100\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | head -n 1 || true)
+fi
+
+if [ -z "$TAILSCALE_IP" ]; then
+    TAILSCALE_IP=$(ifconfig 2>/dev/null | grep -oE "100\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | head -n 1 || true)
 fi
 
 HOST="${HOST:-0.0.0.0}"

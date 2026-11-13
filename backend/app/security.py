@@ -2,6 +2,7 @@
 Security, URL validation, and duplicate submission protection.
 """
 
+import os
 import re
 import subprocess
 import time
@@ -99,13 +100,26 @@ def check_and_record_dispatch(video_id: str) -> Tuple[bool, Optional[int]]:
 
 
 def get_tailscale_ip() -> Optional[str]:
-    """Detects Tailscale IPv4 address if Tailscale is running on the host."""
+    """
+    Detects Tailscale IPv4 address on both standard Linux hosts and Android/Termux environments.
+    Checks:
+    1. TAILSCALE_IP environment variable override (if configured in .env)
+    2. tailscale CLI command (if installed)
+    3. ip -4 addr interface inspection (for Android tun0 VPN interface)
+    4. ifconfig interface output
+    """
+    # 1. Environment variable override
+    env_ip = os.getenv("TAILSCALE_IP", "").strip()
+    if env_ip.startswith("100."):
+        return env_ip
+
+    # 2. Try tailscale CLI
     try:
         result = subprocess.run(
             ["tailscale", "ip", "-4"],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=1
         )
         if result.returncode == 0:
             ip = result.stdout.strip().split("\n")[0].strip()
@@ -113,4 +127,25 @@ def get_tailscale_ip() -> Optional[str]:
                 return ip
     except Exception:
         pass
+
+    # 3. Check ip -4 addr
+    try:
+        r = subprocess.run(["ip", "-4", "addr"], capture_output=True, text=True, timeout=1)
+        if r.returncode == 0:
+            matches = re.findall(r"inet\s+(100\.\d{1,3}\.\d{1,3}\.\d{1,3})", r.stdout)
+            if matches:
+                return matches[0]
+    except Exception:
+        pass
+
+    # 4. Check ifconfig
+    try:
+        r = subprocess.run(["ifconfig"], capture_output=True, text=True, timeout=1)
+        if r.returncode == 0:
+            matches = re.findall(r"inet\s+(?:addr:)?(100\.\d{1,3}\.\d{1,3}\.\d{1,3})", r.stdout)
+            if matches:
+                return matches[0]
+    except Exception:
+        pass
+
     return None

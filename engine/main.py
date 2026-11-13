@@ -986,6 +986,7 @@ def _download_youtube_video(url, output_dir=".", on_audio=None, allow_paid=True,
             # entry of the list into the SAME outtmpl (the title is the
             # playlist's), paying for all of them and keeping the last.
             'noplaylist': True,
+            'remote_components': {'ejs:github'},
             'extractor_args': extractor_args,
             'http_headers': {
                 'User-Agent': (

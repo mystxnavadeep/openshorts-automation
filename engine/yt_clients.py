@@ -30,7 +30,7 @@ else:
     # 'android' client bypasses the datacenter IP "Sign in to confirm you're not a bot"
     # challenge on headless cloud runners (GitHub Actions / Azure / AWS) while still
     # providing full 1080p formats. Falls back to default & mweb.
-    HD_CLIENTS = ["android", "default", "mweb"]
+    HD_CLIENTS = ["android", "tv", "default", "mweb"]
 
 
 class NotASingleVideo(ValueError):

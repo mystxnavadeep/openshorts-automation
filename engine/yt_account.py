@@ -267,16 +267,53 @@ def request(account=0):
 
 # --- several accounts ------------------------------------------------------
 
+def _normalize_cookie_text(text: str) -> str:
+    """Normalizes cookie input, auto-converting JSON cookies (from extensions like
+    EditThisCookie or Cookie-Editor) to standard Netscape cookies.txt format."""
+    text = (text or "").strip()
+    if not text:
+        return ""
+    if text.startswith("[") or text.startswith("{"):
+        try:
+            data = json.loads(text)
+            if isinstance(data, dict):
+                data = data.get("cookies", [data])
+            if isinstance(data, list):
+                lines = [
+                    "# Netscape HTTP Cookie File",
+                    "# http://curl.haxx.se/rfc/cookie_spec.html",
+                    "# Auto-converted from JSON by OpenShorts",
+                    ""
+                ]
+                for c in data:
+                    if not isinstance(c, dict):
+                        continue
+                    domain = c.get("domain", "")
+                    include_subdomains = "TRUE" if domain.startswith(".") else "FALSE"
+                    path = c.get("path", "/")
+                    secure = "TRUE" if c.get("secure", False) else "FALSE"
+                    expiry = int(c.get("expirationDate", 0) or c.get("expires", 0) or 0)
+                    name = c.get("name", "")
+                    value = c.get("value", "")
+                    lines.append(f"{domain}\t{include_subdomains}\t{path}\t{secure}\t{expiry}\t{name}\t{value}")
+                return "\n".join(lines) + "\n"
+        except Exception:
+            pass
+    return text + "\n"
+
+
 def accounts(env=None):
     """The cookie files configured, in order: YOUTUBE_COOKIES, then
     YOUTUBE_COOKIES_2 .. _9. Empty ones are skipped."""
     env = os.environ if env is None else env
-    names = ["YOUTUBE_COOKIES"] + [f"YOUTUBE_COOKIES_{i}" for i in range(2, MAX_ACCOUNTS + 1)]
+    names = ["YOUTUBE_COOKIES", "YT_COOKIES"] + [f"YOUTUBE_COOKIES_{i}" for i in range(2, MAX_ACCOUNTS + 1)]
     out = []
+    seen = set()
     for name in names:
         text = str(env.get(name) or "").strip()
-        if text:
-            out.append(text + "\n")
+        if text and text not in seen:
+            seen.add(text)
+            out.append(_normalize_cookie_text(text))
     return out
 
 

@@ -116,6 +116,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Subtitle Mode Indicator update
+    const subtitleLangSelect = document.getElementById('subtitleLanguage');
+    const subtitleScriptSelect = document.getElementById('subtitleScript');
+    const subtitleModeText = document.getElementById('subtitleModeText');
+
+    function updateSubtitleBadge() {
+        if (!subtitleScriptSelect || !subtitleModeText) return;
+        const script = subtitleScriptSelect.value;
+        const lang = subtitleLangSelect ? subtitleLangSelect.value : 'auto';
+        const langNames = { auto: 'Auto Speech AI', te: 'Telugu', hi: 'Hindi', en: 'English' };
+        const langLabel = langNames[lang] || lang.toUpperCase();
+
+        if (script === 'romanized') {
+            subtitleModeText.textContent = `🔤 Subtitles: Pure Romanized (English Letters Only) • ${langLabel}`;
+        } else {
+            subtitleModeText.textContent = `📜 Subtitles: Original Script (Native) • ${langLabel}`;
+        }
+    }
+
+    if (subtitleScriptSelect) subtitleScriptSelect.addEventListener('change', updateSubtitleBadge);
+    if (subtitleLangSelect) subtitleLangSelect.addEventListener('change', updateSubtitleBadge);
+    updateSubtitleBadge();
+
     // 4. Submit Job Form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -131,6 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
             output_format: document.getElementById('outputFormat').value,
             gemini_model: document.getElementById('geminiModel') ? document.getElementById('geminiModel').value : 'gemini-3.1-flash-lite',
             whisper_model: document.getElementById('whisperModel') ? document.getElementById('whisperModel').value : 'base',
+            subtitle_language: document.getElementById('subtitleLanguage') ? document.getElementById('subtitleLanguage').value : 'auto',
+            subtitle_script: document.getElementById('subtitleScript') ? document.getElementById('subtitleScript').value : 'romanized',
             workers: document.getElementById('workers') ? document.getElementById('workers').value : '1',
             auto_hook: document.getElementById('autoHook').checked,
             gdrive_folder: document.getElementById('gdriveFolder').value.trim() || 'OpenShorts'

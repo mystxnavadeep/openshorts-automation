@@ -1430,6 +1430,13 @@ def auto_hook_clip(clip_path, clip, captions=None, mark=False):
     text = (clip.get('viral_hook_text') or '').strip()
     if not text:
         return None
+
+    if os.environ.get("SUBTITLE_SCRIPT", "romanized").strip().lower() == "romanized":
+        try:
+            from transliterate import transliterate_text
+            text = transliterate_text(text)
+        except Exception:
+            pass
     style = os.environ.get("AUTO_HOOK_STYLE", "pill")
     try:
         seconds = float(os.environ.get("AUTO_HOOK_SECONDS", "5"))
@@ -2812,6 +2819,19 @@ if __name__ == '__main__':
                 save_transcript_checkpoint(output_dir, transcript, input_video, duration)
             except NoAudioError as e:
                 print(f"🔇 {e} — switching to visual analysis.")
+
+        if transcript is not None:
+            try:
+                from transliterate import detect_language
+                detected_lang = detect_language(transcript.get("text", ""), asr_hint=transcript.get("language"))
+                override_lang = os.environ.get("SUBTITLE_LANGUAGE", "auto").strip().lower()
+                effective_lang = override_lang if override_lang != "auto" else detected_lang
+                script_mode = os.environ.get("SUBTITLE_SCRIPT", "romanized").strip().lower()
+                print(f"🌐 [Language Detection] Speech: {detected_lang.upper()} (ASR: {transcript.get('language')}), Subtitle Script: {script_mode.upper()} ({effective_lang.upper()})")
+                transcript["detected_language"] = detected_lang
+                transcript["effective_language"] = effective_lang
+            except Exception as e:
+                print(f"⚠️ [Language Detection] Notice: {e}")
 
         # Music-only or wordless footage transcribes to a handful of words.
         # Clip it by what is on screen instead, like a video with no audio.

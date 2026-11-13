@@ -33,6 +33,10 @@ def main():
                         help="Gemini model for viral moment detection (e.g. gemini-3.1-flash-lite, gemini-3.5-flash)")
     parser.add_argument("--whisper-model", default="base",
                         help="Faster-Whisper model for CPU transcription (base, small, tiny)")
+    parser.add_argument("--subtitle-language", default="auto", choices=["auto", "te", "hi", "en"],
+                        help="Subtitle spoken language: auto (detect from speech), te (Telugu), hi (Hindi), en (English)")
+    parser.add_argument("--subtitle-script", default="romanized", choices=["romanized", "original"],
+                        help="Subtitle script style: romanized (English alphabet only / Tenglish / Hinglish), original (Native script)")
     parser.add_argument("--auto-hook", type=str, default="true",
                         help="Enable AI viral hook text overlays (true/false)")
     parser.add_argument("--workers", type=int, default=1,
@@ -74,6 +78,8 @@ def main():
     env["WHISPER_COMPUTE"] = "int8"      # 8-bit quantization for fast CPU transcription
     env["WHISPER_MODEL"] = args.whisper_model
     env["GEMINI_MODEL"] = args.gemini_model
+    env["SUBTITLE_LANGUAGE"] = args.subtitle_language
+    env["SUBTITLE_SCRIPT"] = args.subtitle_script
     env["CLIP_WORKERS"] = str(args.workers)
     env["AUTO_HOOK"] = auto_hook_flag
     env["WATERMARK"] = "0"               # Clean export without watermark
@@ -109,6 +115,8 @@ def main():
     print(f"  • Output Dir:     {output_path}")
     print(f"  • Gemini Model:   {args.gemini_model}")
     print(f"  • Whisper Model:  {args.whisper_model} (CPU int8)")
+    print(f"  • Subtitle Lang:  {args.subtitle_language}")
+    print(f"  • Subtitle Script:{args.subtitle_script}")
     print(f"  • Auto Hook:      {auto_hook_flag}")
     print(f"  • Workers:        {args.workers}")
     print(f"  • Command:        {' '.join(cmd)}\n")

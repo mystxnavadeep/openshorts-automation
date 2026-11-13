@@ -35,6 +35,24 @@ on:
           - base
           - small
           - tiny
+      subtitle_language:
+        description: 'Subtitle Spoken Language Detection / Override'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - te
+          - hi
+          - en
+      subtitle_script:
+        description: 'Subtitle Script Writing Style'
+        required: false
+        default: 'romanized'
+        type: choice
+        options:
+          - romanized
+          - original
       auto_hook:
         description: 'Generate AI viral hook overlay text'
         required: false
@@ -129,6 +147,8 @@ jobs:
           WHISPER_COMPUTE: "int8"
           WHISPER_MODEL: ${{ inputs.whisper_model }}
           GEMINI_MODEL: ${{ inputs.gemini_model }}
+          SUBTITLE_LANGUAGE: ${{ inputs.subtitle_language }}
+          SUBTITLE_SCRIPT: ${{ inputs.subtitle_script }}
           CLIP_WORKERS: ${{ inputs.workers }}
           AUTO_HOOK: ${{ inputs.auto_hook && '1' || '0' }}
           WATERMARK: "0"
@@ -139,6 +159,8 @@ jobs:
           echo "Format: ${{ inputs.output_format }}"
           echo "Gemini Model: ${{ inputs.gemini_model }}"
           echo "Whisper Model: ${{ inputs.whisper_model }}"
+          echo "Subtitle Language: ${{ inputs.subtitle_language }}"
+          echo "Subtitle Script: ${{ inputs.subtitle_script }}"
           echo "=========================================================="
 
           python3 pipeline/run_openshorts.py \
@@ -147,6 +169,8 @@ jobs:
             --format "${{ inputs.output_format }}" \
             --gemini-model "${{ inputs.gemini_model }}" \
             --whisper-model "${{ inputs.whisper_model }}" \
+            --subtitle-language "${{ inputs.subtitle_language }}" \
+            --subtitle-script "${{ inputs.subtitle_script }}" \
             --auto-hook "${{ inputs.auto_hook }}" \
             --workers "${{ inputs.workers }}"
 

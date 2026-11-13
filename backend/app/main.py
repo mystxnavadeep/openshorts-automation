@@ -43,6 +43,8 @@ class ProcessRequest(BaseModel):
     output_format: Optional[str] = Field("vertical", description="vertical, square, horizontal, or auto")
     gemini_model: Optional[str] = Field("gemini-3.1-flash-lite", description="Gemini model for viral moment detection")
     whisper_model: Optional[str] = Field("base", description="Faster-Whisper model size (base, small, tiny)")
+    subtitle_language: Optional[str] = Field("auto", description="Subtitle language: auto, te (Telugu), hi (Hindi), en (English)")
+    subtitle_script: Optional[str] = Field("romanized", description="Subtitle style: romanized (English alphabet only), original")
     auto_hook: Optional[bool] = Field(True, description="Generate and overlay AI viral hook text")
     workers: Optional[str] = Field("1", description="Concurrent clip render workers")
     gdrive_folder: Optional[str] = Field("OpenShorts", description="Target folder name in Google Drive")
@@ -106,6 +108,8 @@ async def process_video(req: ProcessRequest):
         "output_format": req.output_format or "vertical",
         "gemini_model": req.gemini_model or "gemini-3.1-flash-lite",
         "whisper_model": req.whisper_model or "base",
+        "subtitle_language": req.subtitle_language or "auto",
+        "subtitle_script": req.subtitle_script or "romanized",
         "auto_hook": "true" if req.auto_hook else "false",
         "workers": str(req.workers or "1"),
         "gdrive_folder": req.gdrive_folder or "OpenShorts"

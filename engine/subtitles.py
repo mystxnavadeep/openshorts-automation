@@ -164,12 +164,25 @@ def _collect_word_blocks(transcript, clip_start, clip_end, max_chars=20, max_dur
         flat_words.extend(segment.get('words', []))
     flat_words = merge_continuation_words(flat_words)
 
+    script_mode = os.environ.get("SUBTITLE_SCRIPT", "romanized").strip().lower()
+    subtitle_lang = os.environ.get("SUBTITLE_LANGUAGE", "auto").strip().lower()
+    lang_hint = subtitle_lang if subtitle_lang != "auto" else transcript.get("effective_language") or transcript.get("detected_language") or transcript.get("language")
+
     words = []
     for word_info in flat_words:
         if word_info.get('end', 0) > clip_start and word_info.get('start', 0) < clip_end:
             cleaned_word = _normalize_subtitle_word(word_info.get('word', ''))
             if not cleaned_word:
                 continue
+
+            # Automatically transliterate Indic text to pure Romanized letters
+            if script_mode == "romanized":
+                try:
+                    from transliterate import transliterate_word
+                    cleaned_word = transliterate_word(cleaned_word, lang_override=lang_hint)
+                except Exception:
+                    pass
+
             words.append({
                 'word': cleaned_word,
                 'start': max(0, word_info['start'] - clip_start),
@@ -216,8 +229,14 @@ def generate_srt(transcript, clip_start, clip_end, output_path, max_chars=20, ma
         srt_content += format_srt_block(index, block[0]['start'], block[-1]['end'], text)
 
     # Write UTF-8 with BOM so Windows/FFmpeg subtitle readers reliably detect Unicode text.
-    with open(output_path, 'w', encoding='utf-8-sig') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write(srt_content)
+
+    try:
+        from subtitle_validator import validate_and_sanitize_srt_file
+        validate_and_sanitize_srt_file(output_path, mode=os.environ.get("SUBTITLE_SCRIPT", "romanized").strip().lower())
+    except Exception as e:
+        _log(f"⚠️ Subtitle validator notice: {e}")
 
     return True
 
@@ -512,8 +531,15 @@ def generate_ass(transcript, clip_start, clip_end, output_path,
     if not events:
         return False
 
-    with open(output_path, 'w', encoding='utf-8-sig') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write(header + "\n".join(events) + "\n")
+
+    # Strict subtitle validation & ASCII enforcement
+    try:
+        from subtitle_validator import validate_and_sanitize_ass_file
+        validate_and_sanitize_ass_file(output_path, mode=os.environ.get("SUBTITLE_SCRIPT", "romanized").strip().lower())
+    except Exception as e:
+        _log(f"⚠️ Subtitle validator notice: {e}")
 
     return True
 

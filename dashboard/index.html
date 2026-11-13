@@ -93,6 +93,32 @@
                         </div>
                     </div>
 
+                    <!-- Subtitle Language & Script Style -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subtitleLanguage">Subtitle Language</label>
+                            <select id="subtitleLanguage" name="subtitleLanguage">
+                                <option value="auto" selected>🌐 Auto Detect (Speech AI)</option>
+                                <option value="te">🇮🇳 Telugu (తెలుగు)</option>
+                                <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+                                <option value="en">🇬🇧 English</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subtitleScript">Subtitle Script / Style</label>
+                            <select id="subtitleScript" name="subtitleScript">
+                                <option value="romanized" selected>🔤 Romanized (English Letters Only - Tenglish/Hinglish)</option>
+                                <option value="original">📜 Original Native Script</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Subtitle Mode Indicator -->
+                    <div id="subtitleModeIndicator" class="subtitle-badge">
+                        <span class="badge-dot active"></span>
+                        <span id="subtitleModeText">🔤 Subtitles: Pure Romanized (English Alphabet Only)</span>
+                    </div>
+
                     <!-- Viral Hook & Subtitles Settings -->
                     <div class="settings-box">
                         <div class="toggle-group">

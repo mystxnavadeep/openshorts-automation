@@ -40,6 +40,59 @@ flowchart TD
 
 ---
 
+## 🌐 Automatic Language Detection & Pure Romanized Subtitles
+
+This feature automatically detects the spoken speech language of the input video and generates crystal-clear subtitles in natural English alphabet letters (Roman script), eliminating missing glyphs or broken fonts on short-form platforms.
+
+### 📌 Core Rules
+1. **Transliteration, NOT Translation**:
+   - Spoken Telugu vocabulary and sentence structures are preserved in natural Roman Telugu (**Tenglish**).
+   - Spoken Hindi vocabulary and grammar are preserved in natural Roman Hindi (**Hinglish**).
+   - English speech is preserved verbatim as English.
+   - Speech is **never** translated into English language.
+2. **Strict English Alphabet Only (Pure ASCII)**:
+   - For Romanized mode, subtitles contain **only**:
+     - English uppercase: `A-Z`
+     - English lowercase: `a-z`
+     - Numbers: `0-9`
+     - Basic punctuation: `. , ? ! ' " : ; - ( )`
+     - Standard spaces
+   - Absolutely **zero** Telugu Unicode (`\u0C00-\u0C7F`), Devanagari Unicode (`\u0900-\u097F`), or non-Latin glyphs appear in final output videos.
+3. **Word-Level Timing & ASS Karaoke Preservation**:
+   - Word timestamps (`start`, `end`) and sentence synchronization remain 100% intact.
+   - ASS karaoke highlight animations (`\k`, yellow active word pop) render smoothly without timing shifts.
+4. **Code-Mixed Speech Support**:
+   - Seamlessly handles mixed-language speech (e.g. English technical words mixed into Telugu or Hindi).
+
+### 📖 Verified Transliteration Examples
+
+| Spoken Language | Original Speech Transcript | Subtitle Script Mode | Rendered Subtitle Output |
+| :--- | :--- | :---: | :--- |
+| **Telugu** | నువ్వు ఎలా ఉన్నావు? | Romanized | `Nuvvu ela unnava?` |
+| **Telugu** | నేను బాగున్నాను. | Romanized | `Nenu baagunnanu.` |
+| **Telugu** | ఇది చాలా బాగుంది. | Romanized | `Idi chaala baagundi.` |
+| **Telugu + English** | నేను coding చేస్తున్నాను. | Romanized | `Nenu coding chestunnanu.` |
+| **Hindi** | आप कैसे हो? | Romanized | `Aap kaise ho?` |
+| **Hindi** | मुझे यह बहुत पसंद है। | Romanized | `Mujhe yah bahut pasand hai.` |
+| **Hindi** | क्या आप मेरी मदद कर सकते हैं? | Romanized | `Kya aap meri madad kar sakte hain?` |
+| **Hindi + English** | मैं coding कर रहा हूँ। | Romanized | `Main coding kar raha hoon.` |
+| **English** | How are you? | Romanized / Original | `How are you?` |
+| **English** | I am learning Telugu. | Romanized / Original | `I am learning Telugu.` |
+
+### 🎛️ Dashboard Controls
+* **Subtitle Language**:
+  * `Auto Detect (Speech AI)` *(Default)* — Automatically detects from audio speech.
+  * `Telugu (తెలుగు)` — Manual override for Telugu speech.
+  * `Hindi (हिन्दी)` — Manual override for Hindi speech.
+  * `English` — Manual override for English speech.
+* **Subtitle Script / Style**:
+  * `Romanized (English Letters Only - Tenglish/Hinglish)` *(Default)* — Enforces strict pure ASCII transliteration.
+  * `Original Native Script` — Retains native Telugu (`తెలుగు`) or Devanagari (`हिन्दी`) Unicode characters.
+* **Subtitle Mode Badge**:
+  * Dynamically updates on the dashboard to confirm active subtitle configuration.
+
+---
+
 ## 🔍 Verified Official OpenShorts Integration
 
 This project directly incorporates the genuine OpenShorts codebase under `engine/`:

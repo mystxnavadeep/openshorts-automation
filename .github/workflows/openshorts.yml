@@ -1,4 +1,4 @@
-name: OpenShorts Automation Pipeline
+name: Official OpenShorts Automation Pipeline
 
 on:
   workflow_dispatch:
@@ -16,45 +16,41 @@ on:
           - vertical
           - square
           - horizontal
-      target_clips:
-        description: 'Number of viral Shorts to generate (1-10)'
+          - auto
+      gemini_model:
+        description: 'Google Gemini Model for Moment Selection'
         required: false
-        default: '3'
-        type: string
-      clip_min_seconds:
-        description: 'Minimum clip duration in seconds'
+        default: 'gemini-2.5-flash'
+        type: choice
+        options:
+          - gemini-2.5-flash
+          - gemini-1.5-flash
+          - gemini-3.1-flash-lite
+          - gemini-2.0-flash
+      whisper_model:
+        description: 'Faster-Whisper Model (CPU int8)'
         required: false
-        default: '15'
-        type: string
-      clip_max_seconds:
-        description: 'Maximum clip duration in seconds'
-        required: false
-        default: '60'
-        type: string
+        default: 'base'
+        type: choice
+        options:
+          - base
+          - small
+          - tiny
       auto_hook:
         description: 'Generate AI viral hook overlay text'
         required: false
         default: true
         type: boolean
-      hook_style:
-        description: 'Viral Hook visual style'
+      workers:
+        description: 'Concurrent clip workers (1 recommended on CPU runner)'
         required: false
-        default: 'viral_punch'
-        type: choice
-        options:
-          - viral_punch
-          - minimalist
-          - bold
+        default: '1'
+        type: string
       gdrive_folder:
         description: 'Google Drive destination folder name'
         required: false
         default: 'OpenShorts'
         type: string
-      fast_mode:
-        description: 'Enable CPU-optimized fast processing'
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -62,12 +58,12 @@ permissions:
 
 jobs:
   process-video:
-    name: Generate Shorts & Sync Drive
+    name: Official OpenShorts Execution
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout Repository (with OpenShorts Engine)
         uses: actions/checkout@v4
 
       - name: 🐍 Set up Python 3.11
@@ -97,7 +93,6 @@ jobs:
             chmod 600 ~/.config/rclone/rclone.conf
             echo "Testing rclone remote connection..."
             rclone listremotes
-            # Quick check if gdrive is present
             if rclone listremotes | grep -q "gdrive:"; then
               echo "✓ Remote 'gdrive:' detected and ready!"
             else
@@ -108,37 +103,47 @@ jobs:
             echo "⚠️ RCLONE_CONFIG_DATA secret is not set. Google Drive upload step will be skipped."
           fi
 
-      - name: ⚡ Install Python Pipeline Dependencies
+      - name: ⚡ Install Official OpenShorts Dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install CPU PyTorch build to avoid downloading gigabytes of CUDA packages
+          # 1. Install CPU PyTorch build to avoid downloading 3+ GB of CUDA packages on CPU runner
           pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision
-          # Install remaining pipeline requirements
-          pip install -r pipeline/requirements.txt
+          # 2. Install official OpenShorts dependencies from engine/requirements.txt
+          pip install -r engine/requirements.txt
+          # 3. Pre-cache YOLOv8n weights
+          python3 -c "from ultralytics import YOLO; YOLO('yolov8n.pt')"
 
-      - name: 🎬 Run OpenShorts Processing Pipeline
+      - name: 🎬 Run Official OpenShorts Pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           YT_COOKIES: ${{ secrets.YT_COOKIES }}
           GPU_RENDER: "0"
           FORCE_CPU: "1"
+          TRANSCRIBE_BACKEND: "whisper"
+          WHISPER_DEVICE: "cpu"
+          WHISPER_COMPUTE: "int8"
+          WHISPER_MODEL: ${{ inputs.whisper_model }}
+          GEMINI_MODEL: ${{ inputs.gemini_model }}
+          CLIP_WORKERS: ${{ inputs.workers }}
+          AUTO_HOOK: ${{ inputs.auto_hook && '1' || '0' }}
+          WATERMARK: "0"
         run: |
           echo "=========================================================="
-          echo "Starting OpenShorts video processing..."
+          echo "Executing Official OpenShorts (mutonby/openshorts)..."
           echo "URL: ${{ inputs.youtube_url }}"
           echo "Format: ${{ inputs.output_format }}"
-          echo "Target clips: ${{ inputs.target_clips }}"
+          echo "Gemini Model: ${{ inputs.gemini_model }}"
+          echo "Whisper Model: ${{ inputs.whisper_model }}"
           echo "=========================================================="
-          
+
           python3 pipeline/run_openshorts.py \
             --url "${{ inputs.youtube_url }}" \
             --output-dir "output" \
             --format "${{ inputs.output_format }}" \
-            --target-clips "${{ inputs.target_clips }}" \
-            --min-seconds "${{ inputs.clip_min_seconds }}" \
-            --max-seconds "${{ inputs.clip_max_seconds }}" \
+            --gemini-model "${{ inputs.gemini_model }}" \
+            --whisper-model "${{ inputs.whisper_model }}" \
             --auto-hook "${{ inputs.auto_hook }}" \
-            --fast-mode "${{ inputs.fast_mode }}"
+            --workers "${{ inputs.workers }}"
 
       - name: 📦 Upload Generated Shorts as Workflow Artifacts
         uses: actions/upload-artifact@v4
@@ -153,7 +158,7 @@ jobs:
         run: |
           if [ -f ~/.config/rclone/rclone.conf ] && rclone listremotes | grep -q "gdrive:"; then
             TARGET_PATH="gdrive:${{ inputs.gdrive_folder }}/Run-${{ github.run_number }}"
-            echo "📤 Uploading generated clips to Google Drive ($TARGET_PATH)..."
+            echo "📤 Uploading official OpenShorts clips to Google Drive ($TARGET_PATH)..."
             rclone copy output/ "$TARGET_PATH" \
               --progress \
               --transfers 4 \
@@ -167,28 +172,23 @@ jobs:
       - name: 📊 Generate Workflow Summary
         if: always()
         run: |
-          echo "### ⚡ OpenShorts Automation Results" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Official OpenShorts Execution Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Source Video**: ${{ inputs.youtube_url }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Format**: ${{ inputs.output_format }} (9:16 vertical)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Target Clips Requested**: ${{ inputs.target_clips }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: ${{ inputs.output_format }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Engine**: [mutonby/openshorts](https://github.com/mutonby/openshorts)" >> $GITHUB_STEP_SUMMARY
           echo "- **Google Drive Destination**: \`gdrive:${{ inputs.gdrive_folder }}/Run-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f output/metadata.json ]; then
-            echo "#### 🎬 Generated Clips:" >> $GITHUB_STEP_SUMMARY
-            echo "| Clip | Title | Duration | File Size |" >> $GITHUB_STEP_SUMMARY
-            echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-            python3 -c '
-          import json
-          try:
-              with open("output/metadata.json") as f:
-                  data = json.load(f)
-              for c in data.get("clips", []):
-                  print(f"| {c[\"filename\"]} | {c[\"title\"]} | {c[\"duration\"]}s | {c[\"size_mb\"]} MB |")
-          except Exception as e:
-              print(f"Error reading metadata: {e}")
-          ' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ No metadata file generated (workflow may have failed before export)." >> $GITHUB_STEP_SUMMARY
+
+          if [ -d output ]; then
+            echo "#### 🎬 Generated Output Files:" >> $GITHUB_STEP_SUMMARY
+            echo "| File | Size (MB) |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+            for f in output/*; do
+              if [ -f "$f" ]; then
+                fname=$(basename "$f")
+                fsize=$(du -m "$f" | cut -f1)
+                echo "| \`$fname\` | ${fsize} MB |" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
           fi

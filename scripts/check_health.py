@@ -106,6 +106,34 @@ def main():
     else:
         print(f"ℹ️ [NOTE] GEMINI_API_KEY is not set in local environment. Remember to add it to GitHub Secrets!")
 
+    # 6. Official OpenShorts Engine Verification
+    print("\n--- 6. Official OpenShorts Upstream Engine ---")
+    repo_root = Path(__file__).resolve().parent.parent
+    engine_main = repo_root / "engine" / "main.py"
+    key_modules = [
+        "engine/main.py",
+        "engine/reframe_v2.py",
+        "engine/layout_picker.py",
+        "engine/subtitles.py",
+        "engine/gemini_worker.py",
+        "engine/clip_selection.py",
+        "engine/requirements.txt"
+    ]
+    engine_ok = True
+    for mod in key_modules:
+        mod_path = repo_root / mod
+        if mod_path.exists():
+            print(f"{check_mark(True)} Verified official module: {mod}")
+        else:
+            print(f"{check_mark(False)} Missing module: {mod}")
+            engine_ok = False
+            all_passed = False
+
+    if engine_ok:
+        print(f"   ✓ Genuine OpenShorts engine (mutonby/openshorts) verified.")
+    else:
+        print(f"   ❌ Official OpenShorts files missing from engine/")
+
     print("\n" + "=" * 65)
     if all_passed:
         print("🎉 System diagnostics completed successfully!")

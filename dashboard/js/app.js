@@ -129,11 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             url: url,
             output_format: document.getElementById('outputFormat').value,
-            target_clips: parseInt(document.getElementById('targetClips').value, 10),
-            clip_min_seconds: parseInt(document.getElementById('minSeconds').value, 10),
-            clip_max_seconds: parseInt(document.getElementById('maxSeconds').value, 10),
+            gemini_model: document.getElementById('geminiModel') ? document.getElementById('geminiModel').value : 'gemini-2.5-flash',
+            whisper_model: document.getElementById('whisperModel') ? document.getElementById('whisperModel').value : 'base',
+            workers: document.getElementById('workers') ? document.getElementById('workers').value : '1',
             auto_hook: document.getElementById('autoHook').checked,
-            fast_mode: document.getElementById('fastMode').checked,
             gdrive_folder: document.getElementById('gdriveFolder').value.trim() || 'OpenShorts'
         };
 

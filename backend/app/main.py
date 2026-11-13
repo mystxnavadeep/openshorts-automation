@@ -40,14 +40,12 @@ app.add_middleware(
 
 class ProcessRequest(BaseModel):
     url: str = Field(..., description="YouTube video URL")
-    output_format: Optional[str] = Field("vertical", description="vertical, square, or horizontal")
-    target_clips: Optional[int] = Field(3, ge=1, le=10, description="Target number of Shorts clips (1-10)")
-    clip_min_seconds: Optional[int] = Field(15, ge=10, le=60, description="Minimum clip duration in seconds")
-    clip_max_seconds: Optional[int] = Field(60, ge=15, le=180, description="Maximum clip duration in seconds")
+    output_format: Optional[str] = Field("vertical", description="vertical, square, horizontal, or auto")
+    gemini_model: Optional[str] = Field("gemini-2.5-flash", description="Gemini model for viral moment detection")
+    whisper_model: Optional[str] = Field("base", description="Faster-Whisper model size (base, small, tiny)")
     auto_hook: Optional[bool] = Field(True, description="Generate and overlay AI viral hook text")
-    hook_style: Optional[str] = Field("viral_punch", description="Viral hook visual style")
+    workers: Optional[str] = Field("1", description="Concurrent clip render workers")
     gdrive_folder: Optional[str] = Field("OpenShorts", description="Target folder name in Google Drive")
-    fast_mode: Optional[bool] = Field(True, description="Enable CPU-optimized fast processing")
 
 
 @app.get("/health")
@@ -102,17 +100,15 @@ async def process_video(req: ProcessRequest):
             detail=f"A workflow for this video was already submitted recently. Please wait {remaining} seconds before re-submitting."
         )
 
-    # 3. Format inputs for GitHub Actions workflow_dispatch
+    # 3. Format inputs for official OpenShorts GitHub Actions workflow_dispatch
     workflow_inputs = {
         "youtube_url": canonical_url,
         "output_format": req.output_format or "vertical",
-        "target_clips": str(req.target_clips or 3),
-        "clip_min_seconds": str(req.clip_min_seconds or 15),
-        "clip_max_seconds": str(req.clip_max_seconds or 60),
+        "gemini_model": req.gemini_model or "gemini-2.5-flash",
+        "whisper_model": req.whisper_model or "base",
         "auto_hook": "true" if req.auto_hook else "false",
-        "hook_style": req.hook_style or "viral_punch",
-        "gdrive_folder": req.gdrive_folder or "OpenShorts",
-        "fast_mode": "true" if req.fast_mode else "false"
+        "workers": str(req.workers or "1"),
+        "gdrive_folder": req.gdrive_folder or "OpenShorts"
     }
 
     # 4. Trigger GitHub Actions workflow

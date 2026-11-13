@@ -127,9 +127,11 @@ def main():
         bufsize=1
     )
 
+    captured_output = []
     # Stream real-time logs to console
     for line in iter(process.stdout.readline, ''):
         print(line, end='', flush=True)
+        captured_output.append(line)
 
     process.stdout.close()
     return_code = process.wait()
@@ -138,6 +140,16 @@ def main():
     print("-" * 65)
 
     if return_code != 0:
+        full_text = "".join(captured_output)
+        if any(err in full_text for err in ["Sign in to confirm", "HTTP Error 429", "HTTP Error 403", "Failed to extract any player response"]):
+            print("\n" + "=" * 65)
+            print("💡 YOUTUBE CLOUD RUNNER DIAGNOSTIC:")
+            print("YouTube blocked unauthenticated access from the GitHub Actions runner IP.")
+            print("To enable seamless YouTube downloads on GitHub Actions:")
+            print("  1. Export your YouTube cookies using the browser extension 'Get cookies.txt LOCALLY'")
+            print("  2. Run: gh secret set YOUTUBE_COOKIES --repo mystxnavadeep/openshorts-automation")
+            print("  3. Re-dispatch the workflow from the dashboard!")
+            print("=" * 65 + "\n")
         print(f"\n❌ Official OpenShorts exited with error code {return_code} (took {elapsed:.1f}s)")
         sys.exit(return_code)
 

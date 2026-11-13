@@ -66,6 +66,11 @@ jobs:
       - name: 📥 Checkout Repository (with OpenShorts Engine)
         uses: actions/checkout@v4
 
+      - name: 🦕 Set up Deno (for yt-dlp JS challenge solving)
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - name: 🐍 Set up Python 3.11
         uses: actions/setup-python@v5
         with:

@@ -586,7 +586,7 @@ def main() -> int:
     parser.add_argument("--input", dest="input_path", required=True)
     parser.add_argument("--output", dest="output_path", required=True)
     parser.add_argument("--strategy", default="structured-schema")
-    parser.add_argument("--model", default="gemini-2.5-flash")
+    parser.add_argument("--model", default="gemini-3.1-flash-lite")
     args = parser.parse_args()
 
     api_key = os.getenv("GEMINI_API_KEY")

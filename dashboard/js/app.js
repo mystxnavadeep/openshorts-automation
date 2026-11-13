@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             url: url,
             output_format: document.getElementById('outputFormat').value,
-            gemini_model: document.getElementById('geminiModel') ? document.getElementById('geminiModel').value : 'gemini-2.5-flash',
+            gemini_model: document.getElementById('geminiModel') ? document.getElementById('geminiModel').value : 'gemini-3.1-flash-lite',
             whisper_model: document.getElementById('whisperModel') ? document.getElementById('whisperModel').value : 'base',
             workers: document.getElementById('workers') ? document.getElementById('workers').value : '1',
             auto_hook: document.getElementById('autoHook').checked,

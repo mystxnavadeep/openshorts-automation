@@ -41,7 +41,7 @@ app.add_middleware(
 class ProcessRequest(BaseModel):
     url: str = Field(..., description="YouTube video URL")
     output_format: Optional[str] = Field("vertical", description="vertical, square, horizontal, or auto")
-    gemini_model: Optional[str] = Field("gemini-2.5-flash", description="Gemini model for viral moment detection")
+    gemini_model: Optional[str] = Field("gemini-3.1-flash-lite", description="Gemini model for viral moment detection")
     whisper_model: Optional[str] = Field("base", description="Faster-Whisper model size (base, small, tiny)")
     auto_hook: Optional[bool] = Field(True, description="Generate and overlay AI viral hook text")
     workers: Optional[str] = Field("1", description="Concurrent clip render workers")
@@ -104,7 +104,7 @@ async def process_video(req: ProcessRequest):
     workflow_inputs = {
         "youtube_url": canonical_url,
         "output_format": req.output_format or "vertical",
-        "gemini_model": req.gemini_model or "gemini-2.5-flash",
+        "gemini_model": req.gemini_model or "gemini-3.1-flash-lite",
         "whisper_model": req.whisper_model or "base",
         "auto_hook": "true" if req.auto_hook else "false",
         "workers": str(req.workers or "1"),

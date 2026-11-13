@@ -29,8 +29,8 @@ def main():
     parser.add_argument("--output-dir", "-o", default="output", help="Output directory for generated shorts")
     parser.add_argument("--format", default="vertical", choices=["vertical", "square", "horizontal", "auto"],
                         help="Output aspect ratio (default: vertical 9:16)")
-    parser.add_argument("--gemini-model", default="gemini-2.5-flash",
-                        help="Gemini model for viral moment detection (e.g. gemini-2.5-flash, gemini-3.1-flash-lite)")
+    parser.add_argument("--gemini-model", default="gemini-3.1-flash-lite",
+                        help="Gemini model for viral moment detection (e.g. gemini-3.1-flash-lite, gemini-3.5-flash)")
     parser.add_argument("--whisper-model", default="base",
                         help="Faster-Whisper model for CPU transcription (base, small, tiny)")
     parser.add_argument("--auto-hook", type=str, default="true",
